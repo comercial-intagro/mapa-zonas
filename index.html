@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mapa por Zonas — Intagro</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#eef0f2}
+#map{width:100vw;height:100vh;background:#f3f4f6}
+.panel{position:absolute;z-index:1000;background:rgba(255,255,255,0.96);border-radius:11px;box-shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 14px rgba(0,0,0,0.10)}
+#controls{top:12px;left:60px;display:flex;gap:5px;flex-wrap:wrap;background:transparent;box-shadow:none}
+#controls button{padding:6px 13px;border:none;border-radius:18px;font-size:12.5px;font-weight:600;cursor:pointer;background:rgba(255,255,255,0.9);color:#475569;box-shadow:0 1px 4px rgba(0,0,0,0.14);transition:all .15s}
+#controls button:hover{background:#fff;color:#1e293b}
+#controls button.active{background:#2563eb;color:#fff}
+#viewtoggle{top:51px;left:60px;display:flex;gap:5px;background:transparent;box-shadow:none}
+#viewtoggle button{padding:5px 13px;border:none;border-radius:18px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(255,255,255,0.9);color:#64748b;box-shadow:0 1px 4px rgba(0,0,0,0.14)}
+#viewtoggle button:hover{background:#fff}
+#viewtoggle button.active{background:#0f766e;color:#fff}
+#deppanel{top:90px;left:12px;width:258px;max-height:calc(100vh - 110px);display:none;flex-direction:column;overflow:hidden}
+#deppanel .dhead{padding:13px 15px 11px;border-bottom:1px solid #eef1f4;position:relative}
+#deppanel .dhead h3{margin:0;font-size:15px;color:#0f172a;letter-spacing:-0.2px;padding-right:20px}
+#deppanel .dhead .sub{font-size:11.5px;color:#64748b;margin-top:2px}
+#deppanel .dhead .big{margin-top:7px;font-size:13px;color:#0f172a}
+#deppanel .dhead .big b{font-size:16px;font-variant-numeric:tabular-nums}
+#deppanel .dclose{position:absolute;top:10px;right:11px;cursor:pointer;color:#94a3b8;font-size:17px;line-height:1;border:none;background:none;padding:2px}
+#deppanel .dclose:hover{color:#0f172a}
+#deppanel .dlist{overflow-y:auto;padding:5px 0}
+#deppanel .lrow{display:flex;justify-content:space-between;gap:10px;padding:5px 15px;font-size:12.5px;color:#334155;border-bottom:1px solid #f4f6f8}
+#deppanel .lrow:hover{background:#f6f8fa}
+#deppanel .lrow .ln{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#deppanel .lrow .lv{color:#0f172a;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+#deppanel .dempty{padding:14px 15px;color:#94a3b8;font-size:12.5px}
+#info{top:12px;right:12px;padding:13px 15px;font-size:12.5px;min-width:212px}
+#info h3{margin:0 0 8px;font-size:14.5px;color:#0f172a;letter-spacing:-0.2px}
+#info .zrow{display:flex;justify-content:space-between;gap:12px;margin:3px 0;color:#475569}
+#info .zrow b{color:#0f172a;font-variant-numeric:tabular-nums}
+#info .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+#info .tot{margin-top:8px;padding-top:7px;border-top:1px solid #e9edf1;font-weight:700;color:#0f172a}
+#info .pend{color:#b45309;font-size:11px;margin-top:5px;line-height:1.35}
+#legend{bottom:20px;right:12px;padding:11px 14px;font-size:12px;min-width:140px}
+#legend h4{margin:0 0 8px;font-size:12.5px;color:#334155}
+.legrow{display:flex;align-items:center;gap:8px;margin:4px 0;color:#475569;font-variant-numeric:tabular-nums}
+.legsw{width:20px;height:12px;border-radius:3px;flex-shrink:0}
+.legdot{border-radius:50%;flex-shrink:0;background:#ea580c;opacity:.75;border:1px solid #9a3412}
+#geo{bottom:20px;left:50%;transform:translateX(-50%);padding:8px 16px;font-size:12px;display:none;align-items:center;gap:10px;background:rgba(15,23,42,0.88);color:#fff;border-radius:22px;z-index:1001}
+#geo .sp{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.leaflet-tooltip.mini{font-size:12px;line-height:1.3;padding:5px 9px;border:none;border-radius:7px;box-shadow:0 2px 8px rgba(0,0,0,0.22);color:#0f172a;background:rgba(255,255,255,0.97)}
+.leaflet-tooltip.mini:before{display:none}
+.deplabel{background:transparent;border:none;box-shadow:none;color:#1e293b;font-size:10px;font-weight:700;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;padding:0}
+.deplabel:before{display:none}
+#info .meta{margin-top:8px;padding-top:7px;border-top:1px solid #e9edf1;font-size:11px;color:#64748b;line-height:1.45}
+#info .meta b{color:#334155}
+#status{top:50%;left:50%;transform:translate(-50%,-50%);padding:14px 20px;font-size:13px;color:#334155;display:none;text-align:center;max-width:420px}
+#status.err{color:#b91c1c}
+</style></head><body>
+<div id="map"></div>
+<div id="controls" class="panel">
+<button class="active" data-p="TODOS">Todos</button><button data-p="SOJA">Soja</button>
+<button data-p="MAIZ">Maíz</button><button data-p="TRIGO">Trigo</button>
+<button data-p="GIRASOL">Girasol</button><button data-p="SORGO">Sorgo</button><button data-p="CEBADA">Cebada</button>
+</div>
+<div id="viewtoggle" class="panel">
+<button class="active" data-v="VOLUMEN">Volumen</button><button data-v="ZONAS">Zonas GEA</button>
+<button data-v="BURBUJAS">Burbujas</button><button data-v="ETIQUETAS">Etiquetas</button>
+</div>
+<div id="deppanel" class="panel">
+<div class="dhead"><button class="dclose" id="dclose">&times;</button><h3 id="dp-name">—</h3><div class="sub" id="dp-sub"></div><div class="big" id="dp-big"></div></div>
+<div class="dlist" id="dp-list"></div>
+</div>
+<div id="info" class="panel"><h3>Intagro — Procedencia por zona</h3><div id="info-body"></div></div>
+<div id="legend" class="panel"><h4 id="legt">Volumen (tn)</h4><div id="legb"></div></div>
+<div id="status" class="panel"></div>
+<div id="geo"><div class="sp"></div><span id="geotxt">Geolocalizando…</span></div>
+
+<script>
+// ===== CONFIG =====
+var SB_URL="https://yfmqfafrvgydfnzsllcx.supabase.co";
+var SB_KEY="sb_publishable_2ZCuxfolQ8OfAMnmazA7XQ_wV2EsoFI";   // clave pública del proyecto GESTION DE LOGISTICA
+// ===================
+var SBH={apikey:SB_KEY};if(SB_KEY.indexOf("eyJ")===0)SBH.Authorization="Bearer "+SB_KEY;
+var ZCOL={"NUCLEO NORTE":"#0f766e","NUCLEO SUR":"#0e7490","RESTO":"#b8c0cc"};
+var ZNAME={"NUCLEO NORTE":"Núcleo Norte","NUCLEO SUR":"Núcleo Sur","RESTO":"Resto"};
+var SEQ=["#fde8b0","#fac85e","#f49a3a","#e86b2a","#cc4019","#9e1f10"];
+var PROVD={"BUENOS AIRES":"Buenos Aires","CIUDAD AUTONOMA DE BUENOS AIRES":"Ciudad Autónoma de Buenos Aires","CATAMARCA":"Catamarca","CHACO":"Chaco","CHUBUT":"Chubut","CORDOBA":"Córdoba","CORRIENTES":"Corrientes","ENTRE RIOS":"Entre Ríos","FORMOSA":"Formosa","JUJUY":"Jujuy","LA PAMPA":"La Pampa","LA RIOJA":"La Rioja","MENDOZA":"Mendoza","MISIONES":"Misiones","NEUQUEN":"Neuquén","RIO NEGRO":"Río Negro","SALTA":"Salta","SAN JUAN":"San Juan","SAN LUIS":"San Luis","SANTA CRUZ":"Santa Cruz","SANTA FE":"Santa Fe","SANTIAGO DEL ESTERO":"Santiago del Estero","TIERRA DEL FUEGO":"Tierra del Fuego","TUCUMAN":"Tucumán"};
+var DEPS={type:"FeatureCollection",features:[]},DEPVOL={},BUB=[],SIN=[],META={};
+var map=L.map("map",{zoomControl:true,zoomSnap:0.25}).setView([-33.6,-62.6],6.25);
+L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",{attribution:"&copy; Esri",maxZoom:16}).addTo(map);
+L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}",{maxZoom:16,opacity:0.9}).addTo(map);
+map.createPane("choro"); map.getPane("choro").style.mixBlendMode="multiply";
+map.createPane("bub"); map.getPane("bub").style.zIndex=620;
+var prod="TODOS",view="VOLUMEN",layer=null,bubLayer=L.layerGroup(),labels=L.layerGroup().addTo(map);
+var geoDone=false, selKey=null, selLayer=null, loaded=false;
+var pendVol=0, pendN=0;
+function fmt(n){return Math.round(n).toLocaleString("de-DE");}
+function cap(s){return s.toLowerCase().replace(/(^|\s|-)\S/g,function(c){return c.toUpperCase();});}
+function clean(s){return String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase().replace(/\./g," ").replace(/\s+/g," ").trim();}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function depKey(p){return p.prov+"|"+p.depto;}
+function depVolOf(p){var d=DEPVOL[depKey(p)];if(!d)return 0;return prod==="TODOS"?Object.keys(d.prod).reduce(function(a,k){return a+d.prod[k];},0):(d.prod[prod]||0);}
+function locVal(l){return prod==="TODOS"?l.total:(l.prod[prod]||0);}
+function qbreaks(vals){var s=vals.filter(function(v){return v>0;}).sort(function(a,b){return a-b;});var n=s.length;if(!n)return[0,0,0,0,0];function q(x){var i=(n-1)*x,lo=Math.floor(i),hi=Math.ceil(i);return s[lo]+(s[hi]-s[lo])*(i-lo);}return[q(0.35),q(0.55),q(0.72),q(0.86),q(0.95)];}
+function colVol(v,br){if(v<=0)return"#e9edf1";for(var i=0;i<br.length;i++){if(v<=br[i])return SEQ[i];}return SEQ[5];}
+var curBr=[];
+function styleFor(f){var p=f.properties,v=depVolOf(p);
+  if(view==="ZONAS")return{fillColor:ZCOL[p.zona],fillOpacity:v>0?0.80:0.14,color:ZCOL[p.zona],weight:0.5,opacity:0.45};
+  return{fillColor:colVol(v,curBr),fillOpacity:v>0?0.92:0.05,color:"#8a9099",weight:0.35,opacity:0.5};}
+function miniTip(name,v){return "<b>"+esc(name)+"</b><br>"+fmt(v)+" tn";}
+function pip(lat,lng,geom){
+  function inRing(rings){var inside=false,x=lng,y=lat,ring=rings[0];
+    for(var i=0,j=ring.length-1;i<ring.length;j=i++){var xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];
+      if(((yi>y)!=(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))inside=!inside;}return inside;}
+  if(geom.type==="Polygon")return inRing(geom.coordinates);
+  if(geom.type==="MultiPolygon"){for(var k=0;k<geom.coordinates.length;k++){if(inRing(geom.coordinates[k]))return true;}return false;}return false;}
+function findDep(lat,lng){for(var i=0;i<DEPS.features.length;i++){if(pip(lat,lng,DEPS.features[i].geometry))return DEPS.features[i].properties;}return null;}
+function render(){
+  if(!loaded)return;
+  if(layer){map.removeLayer(layer);layer=null;}selLayer=null;
+  map.removeLayer(bubLayer);labels.clearLayers();
+  curBr=qbreaks(DEPS.features.map(function(f){return depVolOf(f.properties);}));
+  if(view==="BURBUJAS"){renderBubbles();}
+  else{
+    layer=L.geoJSON(DEPS,{pane:"choro",style:styleFor,onEachFeature:function(f,ly){
+      ly.bindTooltip(miniTip(cap(f.properties.depto),depVolOf(f.properties)),{className:"mini",sticky:true});
+      ly.on("mouseover",function(){if(depKey(f.properties)!==selKey)ly.setStyle({weight:1.6,color:"#0f172a",opacity:1});});
+      ly.on("mouseout",function(){if(depKey(f.properties)!==selKey)layer.resetStyle(ly);});
+      ly.on("click",function(){selectDep(f.properties,ly);});
+      if(depKey(f.properties)===selKey){selLayer=ly;ly.setStyle({weight:2.4,color:"#0f172a",opacity:1});}
+    }}).addTo(map);
+    if(view==="ETIQUETAS"){
+      DEPS.features.slice().sort(function(a,b){return depVolOf(b.properties)-depVolOf(a.properties);}).slice(0,22).forEach(function(f){
+        var v=depVolOf(f.properties);if(v<=0)return;var c=L.geoJSON(f).getBounds().getCenter();
+        labels.addLayer(L.tooltip({permanent:true,direction:"center",className:"deplabel"}).setLatLng(c).setContent(esc(cap(f.properties.depto))+"<br>"+fmt(v)));});}
+  }
+  buildInfo();buildLegend();
+}
+function renderBubbles(){
+  bubLayer.clearLayers();
+  var pts=BUB.map(function(b){return{b:b,v:prod==="TODOS"?b.total:(b.prod[prod]||0)};}).filter(function(x){return x.v>0;});
+  if(pts.length){var maxV=Math.max.apply(null,pts.map(function(x){return x.v;}));var br=qbreaks(pts.map(function(x){return x.v;}));
+    pts.sort(function(a,b){return b.v-a.v;});
+    pts.forEach(function(x){var r=Math.max(3.5,Math.min(30,Math.sqrt(x.v/maxV)*30));
+      var m=L.circleMarker([x.b.lat,x.b.lng],{pane:"bub",radius:r,fillColor:colVol(x.v,br),color:"#7a1f10",weight:0.7,fillOpacity:0.82});
+      m.bindTooltip(miniTip(cap(x.b.loc),x.v),{className:"mini",sticky:true});bubLayer.addLayer(m);});}
+  bubLayer.addTo(map);
+}
+function selectDep(p,ly){
+  selKey=depKey(p);
+  if(layer)layer.eachLayer(function(l){try{layer.resetStyle(l);}catch(e){}});
+  if(ly){ly.setStyle({weight:2.4,color:"#0f172a",opacity:1});ly.bringToFront&&ly.bringToFront();selLayer=ly;}
+  buildDepPanel();
+}
+function buildDepPanel(){
+  if(!selKey){document.getElementById("deppanel").style.display="none";return;}
+  var parts=selKey.split("|"),d=DEPVOL[selKey];
+  document.getElementById("dp-name").textContent=cap(parts[1]);
+  var zona=(DEPS.features.filter(function(f){return depKey(f.properties)===selKey;})[0]||{properties:{zona:"RESTO"}}).properties.zona;
+  document.getElementById("dp-sub").textContent=cap(parts[0])+" · "+ZNAME[zona];
+  var locs=d?d.locs.map(function(l){return{loc:l.loc,v:locVal(l)};}).filter(function(x){return x.v>0;}):[];
+  locs.sort(function(a,b){return b.v-a.v;});
+  var tot=locs.reduce(function(a,x){return a+x.v;},0);
+  document.getElementById("dp-big").innerHTML="<b>"+fmt(tot)+"</b> tn"+(prod==="TODOS"?"":" de "+cap(prod))+" &middot; "+locs.length+" localidad"+(locs.length===1?"":"es");
+  var lh=document.getElementById("dp-list");
+  if(!locs.length){lh.innerHTML="<div class='dempty'>Sin volumen para este filtro.</div>";}
+  else{lh.innerHTML=locs.map(function(x){return "<div class='lrow'><span class='ln'>"+esc(cap(x.loc))+"</span><span class='lv'>"+fmt(x.v)+" tn</span></div>";}).join("");}
+  document.getElementById("deppanel").style.display="flex";
+}
+document.getElementById("dclose").addEventListener("click",function(){selKey=null;document.getElementById("deppanel").style.display="none";if(layer)layer.eachLayer(function(l){try{layer.resetStyle(l);}catch(e){}});});
+function fmtFecha(s){if(!s)return"";var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"})+" "+d.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});}
+function buildInfo(){
+  var z={"NUCLEO NORTE":0,"NUCLEO SUR":0,"RESTO":0};
+  DEPS.features.forEach(function(f){z[f.properties.zona]+=depVolOf(f.properties);});
+  var tot=z["NUCLEO NORTE"]+z["NUCLEO SUR"]+z["RESTO"];
+  var pend=prod==="TODOS"?pendVol:SIN.filter(function(s){return !s.done;}).reduce(function(a,s){return a+(s.prod[prod]||0);},0);
+  var h="";
+  ["NUCLEO NORTE","NUCLEO SUR","RESTO"].forEach(function(k){var pct=tot?(z[k]/tot*100):0;
+    h+="<div class='zrow'><span><span class='sw' style='background:"+ZCOL[k]+"'></span>"+ZNAME[k]+"</span><b>"+fmt(z[k])+" <span style='color:#94a3b8;font-weight:400'>("+pct.toFixed(0)+"%)</span></b></div>";});
+  h+="<div class='zrow tot'><span>Total ubicado</span><b>"+fmt(tot)+" tn</b></div>";
+  if(pend>0)h+="<div class='pend'>+ "+fmt(pend)+" tn sin ubicar ("+pendN+" localidades)"+(geoDone?"":" — geolocalizando…")+"</div>";
+  var fc=META.fecha_corte?META.fecha_corte.valor:"";
+  h+="<div class='meta'>Datos al: <b>"+esc(fc||"sin fecha")+"</b>"+(META.fecha_corte&&META.fecha_corte.actualizado?"<br>Cargado: "+esc(fmtFecha(META.fecha_corte.actualizado)):"")+"</div>";
+  document.getElementById("info-body").innerHTML=h;
+}
+function buildLegend(){
+  var t=document.getElementById("legt"),b=document.getElementById("legb");
+  if(view==="ZONAS"){t.textContent="Zonas GEA";b.innerHTML=["NUCLEO NORTE","NUCLEO SUR","RESTO"].map(function(k){return "<div class='legrow'><span class='legsw' style='background:"+ZCOL[k]+"'></span>"+ZNAME[k]+"</div>";}).join("");return;}
+  if(view==="BURBUJAS"){t.textContent="Volumen "+(prod==="TODOS"?"total":cap(prod));b.innerHTML=[["Mayor",22],["Medio",13],["Menor",6]].map(function(p){return "<div class='legrow'><span class='legdot' style='width:"+p[1]+"px;height:"+p[1]+"px'></span>"+p[0]+"</div>";}).join("");return;}
+  t.textContent="Volumen "+(prod==="TODOS"?"total":cap(prod))+" (tn)";
+  var lo=0,h="";for(var i=0;i<SEQ.length;i++){var hi=(i<curBr.length)?curBr[i]:lo;
+    var rng=(i===SEQ.length-1)?("> "+fmt(curBr[curBr.length-1])):(fmt(lo)+" – "+fmt(hi));
+    h+="<div class='legrow'><span class='legsw' style='background:"+SEQ[i]+"'></span>"+rng+"</div>";lo=hi;}
+  b.innerHTML=h;
+}
+document.getElementById("controls").addEventListener("click",function(e){if(e.target.tagName!=="BUTTON")return;
+  document.querySelectorAll("#controls button").forEach(function(x){x.classList.remove("active");});e.target.classList.add("active");prod=e.target.getAttribute("data-p");render();if(selKey)buildDepPanel();});
+document.getElementById("viewtoggle").addEventListener("click",function(e){if(e.target.tagName!=="BUTTON")return;
+  document.querySelectorAll("#viewtoggle button").forEach(function(x){x.classList.remove("active");});e.target.classList.add("active");view=e.target.getAttribute("data-v");render();if(selKey)buildDepPanel();});
+
+// ===== DATOS (Supabase) =====
+function status(msg,isErr){var s=document.getElementById("status");if(!msg){s.style.display="none";return;}s.style.display="block";s.className="panel"+(isErr?" err":"");s.innerHTML=msg;}
+async function sbAll(table,select){
+  var out=[],from=0,step=1000;
+  while(true){
+    var r=await fetch(SB_URL+"/rest/v1/"+table+"?select="+encodeURIComponent(select||"*")+"&order=1",{headers:Object.assign({"Range-Unit":"items",Range:from+"-"+(from+step-1)},SBH)});
+    if(!r.ok)throw new Error(table+": "+r.status+" "+(await r.text()).slice(0,200));
+    var rows=await r.json();out=out.concat(rows);if(rows.length<step)break;from+=step;}
+  return out;}
+async function sbUpsertGeo(rows){
+  if(!rows.length)return;
+  var r=await fetch(SB_URL+"/rest/v1/mapa_geo?on_conflict=localidad_clean,provincia",{method:"POST",headers:Object.assign({"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=minimal"},SBH),body:JSON.stringify(rows)});
+  if(!r.ok)console.warn("No se pudo guardar mapa_geo",r.status,await r.text());}
+function addLoc(s,lat,lng){
+  BUB.push({loc:s.loc,lat:lat,lng:lng,prod:s.prod,total:s.total});
+  var dp=findDep(lat,lng);
+  if(dp){var k=depKey(dp);if(!DEPVOL[k])DEPVOL[k]={prod:{},locs:[]};
+    for(var pp in s.prod){DEPVOL[k].prod[pp]=(DEPVOL[k].prod[pp]||0)+s.prod[pp];}
+    DEPVOL[k].locs.push({loc:s.loc,prod:s.prod,total:s.total});
+    DEPVOL[k].locs.sort(function(a,b){return b.total-a.total;});}
+}
+async function load(){
+  if(!SB_KEY){status("Falta configurar la clave de Supabase (SB_KEY) en index.html.",true);return;}
+  status("Cargando datos…");
+  try{
+    var res=await Promise.all([
+      fetch("deptos.geojson").then(function(r){if(!r.ok)throw new Error("deptos.geojson: "+r.status);return r.json();}),
+      sbAll("mapa_procedencias","localidad,provincia,producto,toneladas"),
+      sbAll("mapa_geo","localidad_clean,provincia,lat,lng,ok"),
+      sbAll("mapa_meta","clave,valor,actualizado")]);
+  }catch(e){status("No se pudieron cargar los datos.<br><small>"+esc(e.message)+"</small>",true);return;}
+  DEPS=res[0];
+  var geo={};res[2].forEach(function(g){geo[g.localidad_clean+"|"+g.provincia]=g;});
+  META={};res[3].forEach(function(m){META[m.clave]=m;});
+  var locs={};
+  res[1].forEach(function(r){var pv=clean(r.provincia),c=clean(r.localidad),k=c+"|"+pv,t=Number(r.toneladas)||0;if(!c||t<=0)return;
+    var p=clean(r.producto);
+    if(!locs[k])locs[k]={loc:r.localidad,clean:c,prov:pv,provd:PROVD[pv]||cap(pv),prod:{},total:0};
+    locs[k].prod[p]=(locs[k].prod[p]||0)+t;locs[k].total+=t;});
+  Object.keys(locs).forEach(function(k){var s=locs[k],g=geo[k];
+    if(g&&g.ok&&g.lat!=null)addLoc(s,g.lat,g.lng);
+    else if(g&&!g.ok){} // Nominatim no la encontró: queda fuera del mapa
+    else{SIN.push(s);pendVol+=s.total;pendN++;}});
+  SIN.sort(function(a,b){return b.total-a.total;});
+  loaded=true;status(null);render();
+  geocodeSin();
+}
+async function geocodeSin(){
+  if(!SIN.length){geoDone=true;render();return;}
+  var g=document.getElementById("geo"),gt=document.getElementById("geotxt");g.style.display="flex";
+  var buf=[];
+  for(var i=0;i<SIN.length;i++){var s=SIN[i];gt.textContent="Geolocalizando "+(i+1)+"/"+SIN.length+" — "+cap(s.clean);
+    try{var q=s.clean+", "+s.provd+", Argentina";
+      var resp=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q="+encodeURIComponent(q),{headers:{"Accept-Language":"es"}});
+      var dd=await resp.json();
+      if(dd&&dd.length){var lat=parseFloat(dd[0].lat),lng=parseFloat(dd[0].lon);addLoc(s,lat,lng);buf.push({localidad_clean:s.clean,provincia:s.prov,lat:lat,lng:lng,ok:true,fuente:"nominatim"});}
+      else{buf.push({localidad_clean:s.clean,provincia:s.prov,lat:null,lng:null,ok:false,fuente:"nominatim"});}
+      s.done=true;pendVol-=s.total;pendN--;
+    }catch(e){}
+    if((i+1)%8===0){await sbUpsertGeo(buf);buf=[];render();if(selKey)buildDepPanel();}
+    if(i<SIN.length-1)await new Promise(function(r){setTimeout(r,1100);});
+  }
+  await sbUpsertGeo(buf);geoDone=true;render();if(selKey)buildDepPanel();
+  gt.textContent="Listo";setTimeout(function(){g.style.display="none";},2500);
+}
+load();
+</script></body></html>
