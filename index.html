@@ -78,6 +78,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 var SB_URL="https://yfmqfafrvgydfnzsllcx.supabase.co";
 var SB_KEY="sb_publishable_2ZCuxfolQ8OfAMnmazA7XQ_wV2EsoFI";   // clave pública del proyecto GESTION DE LOGISTICA
 // ===================
+// Sheets publicado como CSV (Archivo > Compartir > Publicar en la web > hoja DATOS > CSV)
+var SHEET_CSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vSFR7irAt5CPWUJU3-4rogMsiyPMIsaKmiLYp4l0yUdw5q-JjcbU2SjINx8cpjgPD7rWZmZPFXQmbfh/pub?output=csv";
 var SBH={apikey:SB_KEY};if(SB_KEY.indexOf("eyJ")===0)SBH.Authorization="Bearer "+SB_KEY;
 var ZCOL={"NUCLEO NORTE":"#0f766e","NUCLEO SUR":"#0e7490","RESTO":"#b8c0cc"};
 var ZNAME={"NUCLEO NORTE":"Núcleo Norte","NUCLEO SUR":"Núcleo Sur","RESTO":"Resto"};
@@ -178,7 +180,7 @@ function buildInfo(){
   h+="<div class='zrow tot'><span>Total ubicado</span><b>"+fmt(tot)+" tn</b></div>";
   if(pend>0)h+="<div class='pend'>+ "+fmt(pend)+" tn sin ubicar ("+pendN+" localidades)"+(geoDone?"":" — geolocalizando…")+"</div>";
   var fc=META.fecha_corte?META.fecha_corte.valor:"";
-  h+="<div class='meta'>Datos al: <b>"+esc(fc||"sin fecha")+"</b>"+(META.fecha_corte&&META.fecha_corte.actualizado?"<br>Cargado: "+esc(fmtFecha(META.fecha_corte.actualizado)):"")+"</div>";
+  h+="<div class='meta'>Datos al: <b>"+esc(fc||"sin fecha")+"</b>"+"</div>";
   document.getElementById("info-body").innerHTML=h;
 }
 function buildLegend(){
@@ -209,6 +211,33 @@ async function sbUpsertGeo(rows){
   if(!rows.length)return;
   var r=await fetch(SB_URL+"/rest/v1/mapa_geo?on_conflict=localidad_clean,provincia",{method:"POST",headers:Object.assign({"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=minimal"},SBH),body:JSON.stringify(rows)});
   if(!r.ok)console.warn("No se pudo guardar mapa_geo",r.status,await r.text());}
+function parseCSV(t){var rows=[],row=[],f="",q=false;
+  for(var i=0;i<t.length;i++){var c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++;}else q=false;}else f+=c;}
+    else if(c==='"')q=true;
+    else if(c===","){row.push(f);f="";}
+    else if(c==="\n"||c==="\r"){if(c==="\r"&&t[i+1]==="\n")i++;row.push(f);rows.push(row);row=[];f="";}
+    else f+=c;}
+  if(f!==""||row.length){row.push(f);rows.push(row);}
+  return rows;}
+function num(v){v=String(v==null?"":v).replace(/\s/g,"");if(!v)return 0;
+  if(v.indexOf(",")>=0&&v.indexOf(".")>=0)v=v.replace(/\./g,"").replace(",",".");
+  else if(v.indexOf(",")>=0)v=v.replace(",",".");
+  else if(/^\d{1,3}(\.\d{3})+$/.test(v))v=v.replace(/\./g,"");
+  var n=parseFloat(v);return isNaN(n)?0:n;}
+async function loadSheet(){
+  var r=await fetch(SHEET_CSV,{cache:"no-store"});
+  if(!r.ok)throw new Error("Sheets: "+r.status);
+  var rows=parseCSV(await r.text());if(!rows.length)throw new Error("Sheets vacío");
+  var h=rows[0].map(function(x){return clean(x);});
+  function col(n){var i=h.indexOf(n);if(i<0)throw new Error("Sheets: falta la columna "+n);return i;}
+  var iL=col("LOCALIDAD"),iP=col("PROVINCIA"),iR=col("PRODUCTO"),iT=col("TONELADAS"),iF=h.indexOf("FECHA DE CORTE");
+  var data=[],fecha="";
+  for(var k=1;k<rows.length;k++){var w=rows[k];
+    if(iF>=0&&!fecha&&w[iF])fecha=String(w[iF]).trim();
+    if(!w[iL])continue;
+    data.push({localidad:String(w[iL]).trim(),provincia:w[iP]||"",producto:w[iR]||"",toneladas:num(w[iT])});}
+  return {data:data,fecha:fecha};}
 function addLoc(s,lat,lng){
   BUB.push({loc:s.loc,lat:lat,lng:lng,prod:s.prod,total:s.total});
   var dp=findDep(lat,lng);
@@ -219,19 +248,19 @@ function addLoc(s,lat,lng){
 }
 async function load(){
   if(!SB_KEY){status("Falta configurar la clave de Supabase (SB_KEY) en index.html.",true);return;}
+  if(SHEET_CSV.indexOf("PEGAR")===0){status("Falta configurar el link del Sheets (SHEET_CSV) en index.html.",true);return;}
   status("Cargando datos…");
   try{
     var res=await Promise.all([
       fetch("deptos.geojson").then(function(r){if(!r.ok)throw new Error("deptos.geojson: "+r.status);return r.json();}),
-      sbAll("mapa_procedencias","localidad,provincia,producto,toneladas","id"),
-      sbAll("mapa_geo","localidad_clean,provincia,lat,lng,ok","localidad_clean,provincia"),
-      sbAll("mapa_meta","clave,valor,actualizado","clave")]);
+      loadSheet(),
+      sbAll("mapa_geo","localidad_clean,provincia,lat,lng,ok","localidad_clean,provincia")]);
   }catch(e){status("No se pudieron cargar los datos.<br><small>"+esc(e.message)+"</small>",true);return;}
   DEPS=res[0];
   var geo={};res[2].forEach(function(g){geo[g.localidad_clean+"|"+g.provincia]=g;});
-  META={};res[3].forEach(function(m){META[m.clave]=m;});
+  META={fecha_corte:{valor:res[1].fecha}};
   var locs={};
-  res[1].forEach(function(r){var pv=clean(r.provincia),c=clean(r.localidad),k=c+"|"+pv,t=Number(r.toneladas)||0;if(!c||t<=0)return;
+  res[1].data.forEach(function(r){var pv=clean(r.provincia),c=clean(r.localidad),k=c+"|"+pv,t=Number(r.toneladas)||0;if(!c||t<=0)return;
     var p=clean(r.producto);
     if(!locs[k])locs[k]={loc:r.localidad,clean:c,prov:pv,provd:PROVD[pv]||cap(pv),prod:{},total:0};
     locs[k].prod[p]=(locs[k].prod[p]||0)+t;locs[k].total+=t;});
