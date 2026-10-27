@@ -198,10 +198,10 @@ document.getElementById("viewtoggle").addEventListener("click",function(e){if(e.
 
 // ===== DATOS (Supabase) =====
 function status(msg,isErr){var s=document.getElementById("status");if(!msg){s.style.display="none";return;}s.style.display="block";s.className="panel"+(isErr?" err":"");s.innerHTML=msg;}
-async function sbAll(table,select){
+async function sbAll(table,select,order){
   var out=[],from=0,step=1000;
   while(true){
-    var r=await fetch(SB_URL+"/rest/v1/"+table+"?select="+encodeURIComponent(select||"*")+"&order=1",{headers:Object.assign({"Range-Unit":"items",Range:from+"-"+(from+step-1)},SBH)});
+    var r=await fetch(SB_URL+"/rest/v1/"+table+"?select="+encodeURIComponent(select||"*")+"&order="+encodeURIComponent(order),{headers:Object.assign({"Range-Unit":"items",Range:from+"-"+(from+step-1)},SBH)});
     if(!r.ok)throw new Error(table+": "+r.status+" "+(await r.text()).slice(0,200));
     var rows=await r.json();out=out.concat(rows);if(rows.length<step)break;from+=step;}
   return out;}
@@ -223,9 +223,9 @@ async function load(){
   try{
     var res=await Promise.all([
       fetch("deptos.geojson").then(function(r){if(!r.ok)throw new Error("deptos.geojson: "+r.status);return r.json();}),
-      sbAll("mapa_procedencias","localidad,provincia,producto,toneladas"),
-      sbAll("mapa_geo","localidad_clean,provincia,lat,lng,ok"),
-      sbAll("mapa_meta","clave,valor,actualizado")]);
+      sbAll("mapa_procedencias","localidad,provincia,producto,toneladas","id"),
+      sbAll("mapa_geo","localidad_clean,provincia,lat,lng,ok","localidad_clean,provincia"),
+      sbAll("mapa_meta","clave,valor,actualizado","clave")]);
   }catch(e){status("No se pudieron cargar los datos.<br><small>"+esc(e.message)+"</small>",true);return;}
   DEPS=res[0];
   var geo={};res[2].forEach(function(g){geo[g.localidad_clean+"|"+g.provincia]=g;});
