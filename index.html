@@ -225,18 +225,32 @@ function num(v){v=String(v==null?"":v).replace(/\s/g,"");if(!v)return 0;
   else if(v.indexOf(",")>=0)v=v.replace(",",".");
   else if(/^\d{1,3}(\.\d{3})+$/.test(v))v=v.replace(/\./g,"");
   var n=parseFloat(v);return isNaN(n)?0:n;}
+// Reglas del reporte de contratos
+var PROVALIAS={"STA FE":"SANTA FE","STGO DEL ESTERO":"SANTIAGO DEL ESTERO","CAPITAL FEDERAL":"CIUDAD AUTONOMA DE BUENOS AIRES","CABA":"CIUDAD AUTONOMA DE BUENOS AIRES"};
+function normProv(p){p=clean(p);return PROVALIAS[p]||p;}
+function grupoProducto(m){m=clean(m);
+  if(m.indexOf("SOJA")===0)return"SOJA";      // todas las sojas juntas
+  if(m.indexOf("MAIZ")===0)return"MAIZ";
+  if(m==="TRIGO")return"TRIGO";
+  if(m.indexOf("GIRASOL")===0)return"GIRASOL";
+  if(m.indexOf("CEBADA")===0)return"CEBADA";
+  if(m.indexOf("SORGO")===0)return"SORGO";
+  return null;}                               // subproductos y otros: afuera
+function esArgentradingVendedor(v){return clean(v).indexOf("ARGENTRADING")>=0;}
 async function loadSheet(){
   var r=await fetch(SHEET_CSV,{cache:"no-store"});
   if(!r.ok)throw new Error("Sheets: "+r.status);
   var rows=parseCSV(await r.text());if(!rows.length)throw new Error("Sheets vacío");
   var h=rows[0].map(function(x){return clean(x);});
   function col(n){var i=h.indexOf(n);if(i<0)throw new Error("Sheets: falta la columna "+n);return i;}
-  var iL=col("LOCALIDAD"),iP=col("PROVINCIA"),iR=col("PRODUCTO"),iT=col("TONELADAS"),iF=h.indexOf("FECHA DE CORTE");
+  var iL=col("PROCEDENCIA"),iP=col("PROVINCIA PROCEDENCIA"),iR=col("MERCADERIA"),iC=col("CONTRATADO"),iV=col("VENDEDOR"),iF=h.indexOf("FECHA DE CORTE");
   var data=[],fecha="";
   for(var k=1;k<rows.length;k++){var w=rows[k];
     if(iF>=0&&!fecha&&w[iF])fecha=String(w[iF]).trim();
     if(!w[iL])continue;
-    data.push({localidad:String(w[iL]).trim(),provincia:w[iP]||"",producto:w[iR]||"",toneladas:num(w[iT])});}
+    if(esArgentradingVendedor(w[iV]))continue;
+    var g=grupoProducto(w[iR]);if(!g)continue;
+    data.push({localidad:String(w[iL]).trim(),provincia:normProv(w[iP]),producto:g,toneladas:num(w[iC])/1000});}
   return {data:data,fecha:fecha};}
 function addLoc(s,lat,lng){
   BUB.push({loc:s.loc,lat:lat,lng:lng,prod:s.prod,total:s.total});
