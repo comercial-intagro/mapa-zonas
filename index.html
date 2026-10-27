@@ -237,18 +237,21 @@ function grupoProducto(m){m=clean(m);
   if(m.indexOf("SORGO")===0)return"SORGO";
   return null;}                               // subproductos y otros: afuera
 function esArgentradingVendedor(v){return clean(v).indexOf("ARGENTRADING")>=0;}
+var VENDEDORES_EXCLUIDOS=["105899"];  // Nro. de vendedor excluidos (igual que el dashboard)
+function esVendedorExcluido(n){return VENDEDORES_EXCLUIDOS.indexOf(String(n||"").replace(/\D/g,""))>=0;}
 async function loadSheet(){
   var r=await fetch(SHEET_CSV,{cache:"no-store"});
   if(!r.ok)throw new Error("Sheets: "+r.status);
   var rows=parseCSV(await r.text());if(!rows.length)throw new Error("Sheets vacío");
   var h=rows[0].map(function(x){return clean(x);});
   function col(n){var i=h.indexOf(n);if(i<0)throw new Error("Sheets: falta la columna "+n);return i;}
-  var iL=col("PROCEDENCIA"),iP=col("PROVINCIA PROCEDENCIA"),iR=col("MERCADERIA"),iC=col("CONTRATADO"),iV=col("VENDEDOR"),iF=h.indexOf("FECHA DE CORTE");
+  var iL=col("PROCEDENCIA"),iP=col("PROVINCIA PROCEDENCIA"),iR=col("MERCADERIA"),iC=col("CONTRATADO"),iV=col("VENDEDOR"),iN=col("NRO VENDEDOR"),iF=h.indexOf("FECHA DE CORTE");
   var data=[],fecha="";
   for(var k=1;k<rows.length;k++){var w=rows[k];
     if(iF>=0&&!fecha&&w[iF])fecha=String(w[iF]).trim();
     if(!w[iL])continue;
     if(esArgentradingVendedor(w[iV]))continue;
+    if(esVendedorExcluido(w[iN]))continue;
     var g=grupoProducto(w[iR]);if(!g)continue;
     data.push({localidad:String(w[iL]).trim(),provincia:normProv(w[iP]),producto:g,toneladas:num(w[iC])/1000});}
   return {data:data,fecha:fecha};}
