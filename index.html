@@ -26,7 +26,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 #deppanel .dclose:hover{color:#0f172a}
 #deppanel .dlist{overflow-y:auto;padding:5px 0}
 #deppanel .lrow{display:flex;justify-content:space-between;gap:10px;padding:5px 15px;font-size:12.5px;color:#334155;border-bottom:1px solid #f4f6f8}
+#deppanel .lrow{cursor:pointer}
 #deppanel .lrow:hover{background:#f6f8fa}
+#deppanel .lrow .ln:before{content:"\25B8";display:inline-block;width:12px;color:#94a3b8;font-size:10px;transition:transform .15s}
+#deppanel .lrow.open{background:#f0fdfa;font-weight:600}
+#deppanel .lrow.open .ln:before{transform:rotate(90deg);color:#0f766e}
+#deppanel .clist{background:#fafbfc;border-bottom:1px solid #eef1f4;padding:3px 0 5px}
+#deppanel .crow{display:flex;justify-content:space-between;gap:10px;padding:3px 15px 3px 29px;font-size:11.5px;color:#475569}
+#deppanel .crow .cn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#deppanel .crow .cv{color:#0f172a;font-variant-numeric:tabular-nums;white-space:nowrap}
+#deppanel .chead{padding:2px 15px 3px 29px;font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.3px}
 #deppanel .lrow .ln{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #deppanel .lrow .lv{color:#0f172a;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 #deppanel .dempty{padding:14px 15px;color:#94a3b8;font-size:12.5px}
@@ -145,26 +154,35 @@ function render(){
   buildInfo();buildLegend();
 }
 function selectDep(p,ly){
+  if(selKey!==depKey(p))openLoc=null;
   selKey=depKey(p);
   if(layer)layer.eachLayer(function(l){try{layer.resetStyle(l);}catch(e){}});
   if(ly){ly.setStyle({weight:2.4,color:"#0f172a",opacity:1});ly.bringToFront&&ly.bringToFront();selLayer=ly;}
   buildDepPanel();buildInfo();
 }
+var openLoc=null;
 function buildDepPanel(){
   if(!selKey){document.getElementById("deppanel").style.display="none";return;}
   var parts=selKey.split("|"),d=DEPVOL[selKey];
   document.getElementById("dp-name").textContent=cap(parts[1]);
   var zona=(DEPS.features.filter(function(f){return depKey(f.properties)===selKey;})[0]||{properties:{zona:"RESTO"}}).properties.zona;
   document.getElementById("dp-sub").textContent=cap(parts[0]);
-  var locs=d?d.locs.map(function(l){return{loc:l.loc,v:locVal(l)};}).filter(function(x){return x.v>0;}):[];
+  var locs=d?d.locs.map(function(l){return{loc:l.loc,v:locVal(l),cli:l.cli};}).filter(function(x){return x.v>0;}):[];
   locs.sort(function(a,b){return b.v-a.v;});
   var tot=locs.reduce(function(a,x){return a+x.v;},0);
   document.getElementById("dp-big").innerHTML="<b>"+fmt(tot)+"</b> tn"+(prod==="TODOS"?"":" de "+cap(prod))+" &middot; "+locs.length+" localidad"+(locs.length===1?"":"es");
   var lh=document.getElementById("dp-list");
   if(!locs.length){lh.innerHTML="<div class='dempty'>Sin volumen para este filtro.</div>";}
-  else{lh.innerHTML=locs.map(function(x){return "<div class='lrow'><span class='ln'>"+esc(cap(x.loc))+"</span><span class='lv'>"+fmt(x.v)+" tn</span></div>";}).join("");}
+  else{lh.innerHTML=locs.map(function(x,i){var op=openLoc===x.loc;
+    var h="<div class='lrow"+(op?" open":"")+"' data-loc='"+esc(x.loc)+"'><span class='ln'>"+esc(cap(x.loc))+"</span><span class='lv'>"+fmt(x.v)+" tn</span></div>";
+    if(op){var cs=Object.keys(x.cli||{}).map(function(n){var c=x.cli[n];return{n:n,v:prod==="TODOS"?Object.keys(c).reduce(function(a,k){return a+c[k];},0):(c[prod]||0)};}).filter(function(c){return c.v>0;});
+      cs.sort(function(a,b){return b.v-a.v;});
+      h+="<div class='clist'><div class='chead'>"+cs.length+" cliente"+(cs.length===1?"":"s")+"</div>"+cs.map(function(c){return "<div class='crow' title='"+esc(c.n)+"'><span class='cn'>"+esc(c.n)+"</span><span class='cv'>"+fmt(c.v)+" tn</span></div>";}).join("")+"</div>";}
+    return h;}).join("");}
   document.getElementById("deppanel").style.display="flex";
 }
+document.getElementById("dp-list").addEventListener("click",function(e){var r=e.target.closest(".lrow");if(!r)return;
+  var l=r.getAttribute("data-loc");openLoc=(openLoc===l)?null:l;var st=this.scrollTop;buildDepPanel();this.scrollTop=st;});
 document.getElementById("dclose").addEventListener("click",function(){selKey=null;buildInfo();document.getElementById("deppanel").style.display="none";if(layer)layer.eachLayer(function(l){try{layer.resetStyle(l);}catch(e){}});});
 function fmtFecha(s){if(!s)return"";var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"})+" "+d.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});}
 var rankOpen=false;
@@ -250,13 +268,24 @@ function grupoProducto(m){m=clean(m);
 function esArgentradingVendedor(v){return clean(v).indexOf("ARGENTRADING")>=0;}
 var VENDEDORES_EXCLUIDOS=["105899","101016","112331"];  // Nro. de vendedor excluidos (igual que el dashboard)
 function esVendedorExcluido(n){return VENDEDORES_EXCLUIDOS.indexOf(String(n||"").replace(/\D/g,""))>=0;}
+function fechaNum(v){v=String(v||"").trim();var m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if(m){var y=+m[3];if(y<100)y+=2000;return y*10000+(+m[2])*100+(+m[1]);}
+  m=v.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return(+m[1])*10000+(+m[2])*100+(+m[3]);return 0;}
+var CUIT_SIN_AGRUPAR=["30681490465"];  // Nutrien: se muestra cada sucursal por separado
+function clienteDe(cuit,nombre,ultimo){var cu=String(cuit||"").replace(/\D/g,"");
+  if(cu&&ultimo[cu]&&CUIT_SIN_AGRUPAR.indexOf(cu)<0)return ultimo[cu].n;return String(nombre||"").trim()||"(sin vendedor)";}
 async function loadSheet(){
   var r=await fetch(SHEET_CSV,{cache:"no-store"});
   if(!r.ok)throw new Error("Sheets: "+r.status);
   var rows=parseCSV(await r.text());if(!rows.length)throw new Error("Sheets vacío");
   var h=rows[0].map(function(x){return clean(x);});
   function col(n){var i=h.indexOf(n);if(i<0)throw new Error("Sheets: falta la columna "+n);return i;}
-  var iL=col("PROCEDENCIA"),iP=col("PROVINCIA PROCEDENCIA"),iR=col("MERCADERIA"),iC=col("CONTRATADO"),iV=col("VENDEDOR"),iN=col("NRO VENDEDOR"),iF=h.indexOf("FECHA DE CORTE");
+  var iL=col("PROCEDENCIA"),iP=col("PROVINCIA PROCEDENCIA"),iR=col("MERCADERIA"),iC=col("CONTRATADO"),iV=col("VENDEDOR"),iN=col("NRO VENDEDOR"),iCu=col("CUIT VENDEDOR"),iFe=col("FECHA"),iF=h.indexOf("FECHA DE CORTE");
+  // Clientes con el mismo CUIT se agrupan; el nombre es el del contrato más reciente (criterio del dashboard)
+  var ultimo={};
+  for(var k=1;k<rows.length;k++){var w=rows[k];if(!w[iL])continue;
+    var cu=String(w[iCu]||"").replace(/\D/g,""),fe=fechaNum(w[iFe]),nm=String(w[iV]||"").trim();
+    if(cu&&nm&&(!ultimo[cu]||fe>=ultimo[cu].f))ultimo[cu]={f:fe,n:nm};}
   var data=[],fecha="";
   for(var k=1;k<rows.length;k++){var w=rows[k];
     if(iF>=0&&!fecha&&w[iF])fecha=String(w[iF]).trim();
@@ -264,13 +293,13 @@ async function loadSheet(){
     if(esArgentradingVendedor(w[iV]))continue;
     if(esVendedorExcluido(w[iN]))continue;
     var g=grupoProducto(w[iR]);if(!g)continue;
-    data.push({localidad:String(w[iL]).trim(),provincia:normProv(w[iP]),producto:g,toneladas:num(w[iC])/1000});}
+    data.push({localidad:String(w[iL]).trim(),provincia:normProv(w[iP]),producto:g,toneladas:num(w[iC])/1000,vendedor:clienteDe(w[iCu],w[iV],ultimo)});}
   return {data:data,fecha:fecha};}
 function addLoc(s,lat,lng){
   var dp=findDep(lat,lng);
   if(dp){var k=depKey(dp);if(!DEPVOL[k])DEPVOL[k]={prod:{},locs:[]};
     for(var pp in s.prod){DEPVOL[k].prod[pp]=(DEPVOL[k].prod[pp]||0)+s.prod[pp];}
-    DEPVOL[k].locs.push({loc:s.loc,prod:s.prod,total:s.total});
+    DEPVOL[k].locs.push({loc:s.loc,prod:s.prod,total:s.total,cli:s.cli});
     DEPVOL[k].locs.sort(function(a,b){return b.total-a.total;});}
 }
 async function load(){
@@ -289,8 +318,9 @@ async function load(){
   var locs={};
   res[1].data.forEach(function(r){var pv=clean(r.provincia),c=clean(r.localidad),k=c+"|"+pv,t=Number(r.toneladas)||0;if(!c||t<=0)return;
     var p=clean(r.producto);
-    if(!locs[k])locs[k]={loc:r.localidad,clean:c,prov:pv,provd:PROVD[pv]||cap(pv),prod:{},total:0};
-    locs[k].prod[p]=(locs[k].prod[p]||0)+t;locs[k].total+=t;});
+    if(!locs[k])locs[k]={loc:r.localidad,clean:c,prov:pv,provd:PROVD[pv]||cap(pv),prod:{},total:0,cli:{}};
+    locs[k].prod[p]=(locs[k].prod[p]||0)+t;locs[k].total+=t;
+    var cl=locs[k].cli[r.vendedor]||(locs[k].cli[r.vendedor]={});cl[p]=(cl[p]||0)+t;});
   Object.keys(locs).forEach(function(k){var s=locs[k],g=geo[k];
     if(g&&g.ok&&g.lat!=null)addLoc(s,g.lat,g.lng);
     else if(g&&!g.ok){} // Nominatim no la encontró: queda fuera del mapa
