@@ -16,6 +16,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 #viewtoggle button{padding:5px 13px;border:none;border-radius:18px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(255,255,255,0.9);color:#64748b;box-shadow:0 1px 4px rgba(0,0,0,0.14)}
 #viewtoggle button:hover{background:#fff}
 #viewtoggle button.active{background:#0f766e;color:#fff}
+#repsel{top:51px;left:235px;display:none;align-items:center;gap:7px;padding:3px 4px 3px 12px;border-radius:18px;box-shadow:0 1px 4px rgba(0,0,0,0.14);font-size:12px;font-weight:600;color:#64748b}
+#repsel select{border:none;background:#f1f5f9;border-radius:14px;padding:4px 8px;font-size:12px;font-weight:600;color:#0f172a;max-width:340px;cursor:pointer;outline:none}
+#info .repname{margin:-2px 0 8px;padding:5px 8px;border-radius:7px;background:#ccfbf1;color:#115e59;font-weight:700;font-size:12px}
 #deppanel{top:90px;left:12px;width:258px;max-height:calc(100vh - 110px);display:none;flex-direction:column;overflow:hidden}
 #deppanel .dhead{padding:13px 15px 11px;border-bottom:1px solid #eef1f4;position:relative}
 #deppanel .dhead h3{margin:0;font-size:15px;color:#0f172a;letter-spacing:-0.2px;padding-right:20px}
@@ -86,6 +89,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 <div id="viewtoggle" class="panel">
 <button class="active" data-v="VOLUMEN">Volumen</button><button data-v="ETIQUETAS">Etiquetas</button>
 </div>
+<div id="repsel" class="panel"><span>Repre / comercial</span><select id="rep"></select></div>
 <div id="deppanel" class="panel">
 <div class="dhead"><button class="dclose" id="dclose">&times;</button><h3 id="dp-name">—</h3><div class="sub" id="dp-sub"></div><div class="big" id="dp-big"></div></div>
 <div class="dlist" id="dp-list"></div>
@@ -105,14 +109,14 @@ var SHEET_CSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vSFR7irAt5CPWUJU3
 var SBH={apikey:SB_KEY};if(SB_KEY.indexOf("eyJ")===0)SBH.Authorization="Bearer "+SB_KEY;
 var SEQ=["#fde8b0","#fac85e","#f49a3a","#e86b2a","#cc4019","#9e1f10"];
 var PROVD={"BUENOS AIRES":"Buenos Aires","CIUDAD AUTONOMA DE BUENOS AIRES":"Ciudad Autónoma de Buenos Aires","CATAMARCA":"Catamarca","CHACO":"Chaco","CHUBUT":"Chubut","CORDOBA":"Córdoba","CORRIENTES":"Corrientes","ENTRE RIOS":"Entre Ríos","FORMOSA":"Formosa","JUJUY":"Jujuy","LA PAMPA":"La Pampa","LA RIOJA":"La Rioja","MENDOZA":"Mendoza","MISIONES":"Misiones","NEUQUEN":"Neuquén","RIO NEGRO":"Río Negro","SALTA":"Salta","SAN JUAN":"San Juan","SAN LUIS":"San Luis","SANTA CRUZ":"Santa Cruz","SANTA FE":"Santa Fe","SANTIAGO DEL ESTERO":"Santiago del Estero","TIERRA DEL FUEGO":"Tierra del Fuego","TUCUMAN":"Tucumán"};
-var DEPS={type:"FeatureCollection",features:[]},DEPVOL={},SIN=[],META={};
+var DEPS={type:"FeatureCollection",features:[]},DEPVOL={},META={};
+var ROWS=[],GEOC={},DEPOF={},LOCINFO={},repSel="TODOS",PEND={tot:0,prod:{},n:0};
 var map=L.map("map",{zoomControl:true,zoomSnap:0.25}).setView([-33.6,-62.6],6.25);
 L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",{attribution:"&copy; Esri",maxZoom:16}).addTo(map);
 L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}",{maxZoom:16,opacity:0.9}).addTo(map);
 map.createPane("choro"); map.getPane("choro").style.mixBlendMode="multiply";
 var prod="TODOS",view="VOLUMEN",layer=null,labels=L.layerGroup().addTo(map);
 var geoDone=false, selKey=null, selLayer=null, loaded=false;
-var pendVol=0, pendN=0;
 function fmt(n){return Math.round(n).toLocaleString("de-DE");}
 function cap(s){return s.toLowerCase().replace(/(^|\s|-)\S/g,function(c){return c.toUpperCase();});}
 function clean(s){return String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase().replace(/\./g," ").replace(/\s+/g," ").trim();}
@@ -191,9 +195,9 @@ function buildInfo(){
   var rows=DEPS.features.map(function(f){return{k:depKey(f.properties),p:f.properties,v:depVolOf(f.properties)};}).filter(function(x){return x.v>0;});
   rows.sort(function(a,b){return b.v-a.v;});
   var tot=rows.reduce(function(a,x){return a+x.v;},0);
-  var pend=prod==="TODOS"?pendVol:SIN.filter(function(s){return !s.done;}).reduce(function(a,s){return a+(s.prod[prod]||0);},0);
-  var h="<div class='zrow tot'><span>Total ubicado"+(prod==="TODOS"?"":" · "+cap(prod))+"</span><b>"+fmt(tot)+" tn</b></div>";
-  if(pend>0)h+="<div class='pend'>+ "+fmt(pend)+" tn sin ubicar ("+pendN+" localidades)"+(geoDone?"":" — geolocalizando…")+"</div>";
+  var pend=prod==="TODOS"?PEND.tot:(PEND.prod[prod]||0);
+  var h=(repSel!=="TODOS"?"<div class='repname'>"+esc(repSel)+"</div>":"")+"<div class='zrow tot'><span>Total ubicado"+(prod==="TODOS"?"":" · "+cap(prod))+"</span><b>"+fmt(tot)+" tn</b></div>";
+  if(pend>0)h+="<div class='pend'>+ "+fmt(pend)+" tn sin ubicar ("+PEND.n+" localidades)"+(geoDone?"":" — geolocalizando…")+"</div>";
   h+="<div class='rkhead'><span>"+(rankOpen?"Todos los departamentos":"Top 10 departamentos")+"</span><span>tn · %</span></div>";
   var show=rankOpen?rows:rows.slice(0,10);
   h+="<div class='rklist"+(rankOpen?" open":"")+"' id='rklist'>"+show.map(function(x,i){
@@ -280,7 +284,7 @@ async function loadSheet(){
   var rows=parseCSV(await r.text());if(!rows.length)throw new Error("Sheets vacío");
   var h=rows[0].map(function(x){return clean(x);});
   function col(n){var i=h.indexOf(n);if(i<0)throw new Error("Sheets: falta la columna "+n);return i;}
-  var iL=col("PROCEDENCIA"),iP=col("PROVINCIA PROCEDENCIA"),iR=col("MERCADERIA"),iC=col("CONTRATADO"),iV=col("VENDEDOR"),iN=col("NRO VENDEDOR"),iCu=col("CUIT VENDEDOR"),iFe=col("FECHA"),iF=h.indexOf("FECHA DE CORTE");
+  var iL=col("PROCEDENCIA"),iP=col("PROVINCIA PROCEDENCIA"),iR=col("MERCADERIA"),iC=col("CONTRATADO"),iV=col("VENDEDOR"),iN=col("NRO VENDEDOR"),iCu=col("CUIT VENDEDOR"),iFe=col("FECHA"),iF=h.indexOf("FECHA DE CORTE"),iRe=h.indexOf("REPRE");
   // Clientes con el mismo CUIT se agrupan; el nombre es el del contrato más reciente (criterio del dashboard)
   var ultimo={};
   for(var k=1;k<rows.length;k++){var w=rows[k];if(!w[iL])continue;
@@ -293,15 +297,38 @@ async function loadSheet(){
     if(esArgentradingVendedor(w[iV]))continue;
     if(esVendedorExcluido(w[iN]))continue;
     var g=grupoProducto(w[iR]);if(!g)continue;
-    data.push({localidad:String(w[iL]).trim(),provincia:normProv(w[iP]),producto:g,toneladas:num(w[iC])/1000,vendedor:clienteDe(w[iCu],w[iV],ultimo)});}
-  return {data:data,fecha:fecha};}
-function addLoc(s,lat,lng){
-  var dp=findDep(lat,lng);
-  if(dp){var k=depKey(dp);if(!DEPVOL[k])DEPVOL[k]={prod:{},locs:[]};
-    for(var pp in s.prod){DEPVOL[k].prod[pp]=(DEPVOL[k].prod[pp]||0)+s.prod[pp];}
-    DEPVOL[k].locs.push({loc:s.loc,prod:s.prod,total:s.total,cli:s.cli});
-    DEPVOL[k].locs.sort(function(a,b){return b.total-a.total;});}
+    data.push({localidad:String(w[iL]).trim(),provincia:normProv(w[iP]),producto:g,toneladas:num(w[iC])/1000,vendedor:clienteDe(w[iCu],w[iV],ultimo),repre:iRe>=0?(String(w[iRe]||"").trim()||"(sin repre)"):null});}
+  return {data:data,fecha:fecha,conRepre:iRe>=0};}
+function depOfKey(k){if(k in DEPOF)return DEPOF[k];var g=GEOC[k],dp=(g&&g.ok)?findDep(g.lat,g.lng):null;DEPOF[k]=dp?depKey(dp):null;return DEPOF[k];}
+// Arma los totales por departamento / localidad / cliente según el repre elegido
+function aggregate(){
+  DEPVOL={};PEND={tot:0,prod:{},n:0};var pl={};
+  ROWS.forEach(function(r){
+    if(repSel!=="TODOS"&&r.rep!==repSel)return;
+    var g=GEOC[r.k];
+    if(!g){PEND.tot+=r.t;PEND.prod[r.p]=(PEND.prod[r.p]||0)+r.t;pl[r.k]=1;return;}
+    if(!g.ok)return;                         // Nominatim no la encontró
+    var dk=depOfKey(r.k);if(!dk)return;       // cae fuera de los departamentos
+    var D=DEPVOL[dk]||(DEPVOL[dk]={prod:{},lm:{},locs:[]});
+    D.prod[r.p]=(D.prod[r.p]||0)+r.t;
+    var L=D.lm[r.k]||(D.lm[r.k]={loc:LOCINFO[r.k].loc,prod:{},total:0,cli:{}});
+    L.prod[r.p]=(L.prod[r.p]||0)+r.t;L.total+=r.t;
+    var c=L.cli[r.cli]||(L.cli[r.cli]={});c[r.p]=(c[r.p]||0)+r.t;});
+  Object.keys(DEPVOL).forEach(function(k){var D=DEPVOL[k];D.locs=Object.keys(D.lm).map(function(x){return D.lm[x];}).sort(function(a,b){return b.total-a.total;});});
+  PEND.n=Object.keys(pl).length;
 }
+function buildRepSel(conRepre){
+  var box=document.getElementById("repsel");if(!conRepre){box.style.display="none";return;}
+  var tot={};ROWS.forEach(function(r){tot[r.rep]=(tot[r.rep]||0)+r.t;});
+  var reps=Object.keys(tot).sort(function(a,b){return tot[b]-tot[a];});
+  var sel=document.getElementById("rep");
+  sel.innerHTML="<option value='TODOS'>Todos los repres / comerciales</option>"+reps.map(function(r){return "<option value='"+esc(r)+"'>"+esc(r)+" — "+fmt(tot[r])+" tn</option>";}).join("");
+  sel.value=repSel;box.style.display="flex";
+}
+document.getElementById("rep").addEventListener("change",function(){repSel=this.value;openLoc=null;aggregate();render();if(selKey)buildDepPanel();
+  if(repSel==="TODOS"){map.setView([-33.6,-62.6],6.25);return;}
+  var b=null;if(layer)layer.eachLayer(function(l){if(l.feature&&depVolOf(l.feature.properties)>0){b=b?b.extend(l.getBounds()):L.latLngBounds(l.getBounds().getSouthWest(),l.getBounds().getNorthEast());}});
+  if(b)map.fitBounds(b,{padding:[60,60],maxZoom:9});});
 async function load(){
   if(!SB_KEY){status("Falta configurar la clave de Supabase (SB_KEY) en index.html.",true);return;}
   if(SHEET_CSV.indexOf("PEGAR")===0){status("Falta configurar el link del Sheets (SHEET_CSV) en index.html.",true);return;}
@@ -313,38 +340,34 @@ async function load(){
       sbAll("mapa_geo","localidad_clean,provincia,lat,lng,ok","localidad_clean,provincia")]);
   }catch(e){status("No se pudieron cargar los datos.<br><small>"+esc(e.message)+"</small>",true);return;}
   DEPS=res[0];
-  var geo={};res[2].forEach(function(g){geo[g.localidad_clean+"|"+g.provincia]=g;});
+  res[2].forEach(function(g){GEOC[g.localidad_clean+"|"+g.provincia]=(g.ok&&g.lat!=null)?{ok:true,lat:g.lat,lng:g.lng}:{ok:false};});
   META={fecha_corte:{valor:res[1].fecha}};
-  var locs={};
   res[1].data.forEach(function(r){var pv=clean(r.provincia),c=clean(r.localidad),k=c+"|"+pv,t=Number(r.toneladas)||0;if(!c||t<=0)return;
-    var p=clean(r.producto);
-    if(!locs[k])locs[k]={loc:r.localidad,clean:c,prov:pv,provd:PROVD[pv]||cap(pv),prod:{},total:0,cli:{}};
-    locs[k].prod[p]=(locs[k].prod[p]||0)+t;locs[k].total+=t;
-    var cl=locs[k].cli[r.vendedor]||(locs[k].cli[r.vendedor]={});cl[p]=(cl[p]||0)+t;});
-  Object.keys(locs).forEach(function(k){var s=locs[k],g=geo[k];
-    if(g&&g.ok&&g.lat!=null)addLoc(s,g.lat,g.lng);
-    else if(g&&!g.ok){} // Nominatim no la encontró: queda fuera del mapa
-    else{SIN.push(s);pendVol+=s.total;pendN++;}});
-  SIN.sort(function(a,b){return b.total-a.total;});
-  loaded=true;status(null);render();
+    if(!LOCINFO[k])LOCINFO[k]={loc:r.localidad,clean:c,prov:pv,provd:PROVD[pv]||cap(pv),total:0};
+    LOCINFO[k].total+=t;
+    ROWS.push({k:k,p:clean(r.producto),t:t,cli:r.vendedor,rep:r.repre||"(sin repre)"});});
+  buildRepSel(res[1].conRepre);
+  aggregate();loaded=true;status(null);render();
   geocodeSin();
 }
 async function geocodeSin(){
-  if(!SIN.length){geoDone=true;render();return;}
+  var todo=Object.keys(LOCINFO).filter(function(k){return !GEOC[k];}).sort(function(a,b){return LOCINFO[b].total-LOCINFO[a].total;});
+  if(!todo.length){geoDone=true;render();return;}
   var g=document.getElementById("geo"),gt=document.getElementById("geotxt");g.style.display="flex";
   var buf=[];
-  for(var i=0;i<SIN.length;i++){var s=SIN[i];gt.textContent="Geolocalizando "+(i+1)+"/"+SIN.length+" — "+cap(s.clean);
+  function refresh(){aggregate();render();if(selKey)buildDepPanel();}
+  for(var i=0;i<todo.length;i++){var k=todo[i],s=LOCINFO[k];gt.textContent="Geolocalizando "+(i+1)+"/"+todo.length+" — "+cap(s.clean);
     try{var q=s.clean+", "+s.provd+", Argentina";
       var resp=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q="+encodeURIComponent(q),{headers:{"Accept-Language":"es"}});
       var dd=await resp.json();
-      if(dd&&dd.length){var lat=parseFloat(dd[0].lat),lng=parseFloat(dd[0].lon);addLoc(s,lat,lng);buf.push({localidad_clean:s.clean,provincia:s.prov,lat:lat,lng:lng,ok:true,fuente:"nominatim"});}
-      else{buf.push({localidad_clean:s.clean,provincia:s.prov,lat:null,lng:null,ok:false,fuente:"nominatim"});}
-      s.done=true;pendVol-=s.total;pendN--;
+      if(dd&&dd.length){var lat=parseFloat(dd[0].lat),lng=parseFloat(dd[0].lon);GEOC[k]={ok:true,lat:lat,lng:lng};buf.push({localidad_clean:s.clean,provincia:s.prov,lat:lat,lng:lng,ok:true,fuente:"nominatim"});}
+      else{GEOC[k]={ok:false};buf.push({localidad_clean:s.clean,provincia:s.prov,lat:null,lng:null,ok:false,fuente:"nominatim"});}
+      delete DEPOF[k];
     }catch(e){}
-    if((i+1)%8===0){await sbUpsertGeo(buf);buf=[];render();if(selKey)buildDepPanel();}
-    if(i<SIN.length-1)await new Promise(function(r){setTimeout(r,1100);});
+    if((i+1)%8===0){await sbUpsertGeo(buf);buf=[];refresh();}
+    if(i<todo.length-1)await new Promise(function(r){setTimeout(r,1100);});
   }
-  await sbUpsertGeo(buf);geoDone=true;render();if(selKey)buildDepPanel();
+  await sbUpsertGeo(buf);geoDone=true;refresh();
   gt.textContent="Listo";setTimeout(function(){g.style.display="none";},2500);
 }
 load();
