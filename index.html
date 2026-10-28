@@ -23,6 +23,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 #plfolders:before{content:"Plantas de acopio";display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
 #plfolders label{display:flex;align-items:center;gap:6px;margin:2px 0;cursor:pointer;white-space:nowrap}
 #plfolders .dot{width:11px;height:11px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.leaflet-tooltip.pllabel{background:rgba(255,255,255,0.92);border:none;border-radius:5px;box-shadow:0 1px 3px rgba(0,0,0,0.25);padding:2px 6px;font-size:10.5px;font-weight:700;color:#0f172a;white-space:nowrap}
+.leaflet-tooltip.pllabel:before{display:none}
+#plfolders .lbl{margin-top:5px;padding-top:5px;border-top:1px solid #e9edf1}
 .leaflet-popup-content{font-size:12.5px;line-height:1.4;margin:10px 13px}
 .leaflet-popup-content .pf{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
 .leaflet-popup-content .pn{font-weight:700;color:#0f172a;margin-bottom:4px}
@@ -384,7 +387,7 @@ async function geocodeSin(){
 }
 // ===== Capa: plantas de acopio (archivo plantas.kml exportado de My Maps) =====
 map.createPane("pl"); map.getPane("pl").style.zIndex=640;
-var PL={loaded:false,layer:L.layerGroup(),groups:{},on:false};
+var PL={loaded:false,layer:L.layerGroup(),groups:{},on:false,labels:false,markers:[]};
 function kmlText(el,tag){var x=el.getElementsByTagName(tag)[0];return x?x.textContent:"";}
 function safeDesc(t){t=String(t||"").replace(/<br\s*\/?>/gi,"\n");var d=document.createElement("div");d.innerHTML=t;t=d.textContent;
   return esc(t.replace(/\u00a0/g," ").trim()).replace(/\n+/g,"<br>");}
@@ -401,19 +404,24 @@ async function loadPlantas(){
       var desc="";Array.prototype.forEach.call(p.getElementsByTagName("Data"),function(d){if(d.getAttribute("name")==="descripción")desc=kmlText(d,"value");});
       if(!desc)desc=kmlText(p,"description");
       var mk=L.circleMarker([lat,lng],{pane:"pl",radius:7,color:"#fff",weight:2,fillColor:col,fillOpacity:1});
-      mk.bindTooltip(esc(kmlText(p,"name")),{className:"mini",direction:"top",offset:[0,-6]});
+      mk._plName=kmlText(p,"name");mk._plCol=col;PL.markers.push(mk);
       mk.bindPopup("<div class='pf' style='color:"+col+"'>"+esc(fname)+"</div><div class='pn'>"+esc(kmlText(p,"name"))+"</div><div class='pd'>"+(safeDesc(desc)||"<i>Sin descripción</i>")+"</div>");
       g.addLayer(mk);n++;});
     PL.groups[fi]=g;g.addTo(PL.layer);
     html+="<label><input type='checkbox' data-f='"+fi+"' checked><span class='dot' style='background:"+col+"'></span>"+esc(fname)+" ("+n+")</label>";});
-  box.innerHTML=html;PL.loaded=true;
+  html+="<label class='lbl'><input type='checkbox' id='pllbl'>Mostrar etiquetas</label>";
+  box.innerHTML=html;PL.loaded=true;setPlLabels(false);
 }
 document.getElementById("pltog").addEventListener("click",async function(){
   var b=this,box=document.getElementById("plfolders");
   if(!PL.loaded){try{b.textContent="Cargando…";await loadPlantas();}catch(e){b.innerHTML="&#9679; Plantas de acopio";status("No se pudo cargar la capa de plantas.<br><small>"+esc(e.message)+"</small>",true);setTimeout(function(){status(null);},4000);return;}}
   PL.on=!PL.on;b.innerHTML="&#9679; Plantas de acopio";b.classList.toggle("active",PL.on);
   if(PL.on){PL.layer.addTo(map);box.style.display="block";}else{map.removeLayer(PL.layer);box.style.display="none";}});
-document.getElementById("plfolders").addEventListener("change",function(e){var g=PL.groups[e.target.getAttribute("data-f")];if(!g)return;
+function setPlLabels(on){PL.labels=on;
+  PL.markers.forEach(function(m){m.unbindTooltip();
+    if(on)m.bindTooltip(esc(m._plName),{permanent:true,className:"pllabel",direction:"right",offset:[8,0]});
+    else m.bindTooltip(esc(m._plName),{className:"mini",direction:"top",offset:[0,-6]});});}
+document.getElementById("plfolders").addEventListener("change",function(e){if(e.target.id==="pllbl"){setPlLabels(e.target.checked);return;}var g=PL.groups[e.target.getAttribute("data-f")];if(!g)return;
   if(e.target.checked)g.addTo(PL.layer);else PL.layer.removeLayer(g);});
 load();
 </script></body></html>
