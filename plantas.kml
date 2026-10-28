@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Plantas de Acopio, clientes compradores.</name>
+    <description><![CDATA[En Rojo: Marque acopios que no operamos aun (o casi nada) y que creemos que pueden tener mercado de directo para meternos en el medio<br>Celeste: Plantas ante-puertos donde se podria alquilar un espacio para comenzar a conocer la actividad de acopiar. Puede ser mas alejada del puerto.<br>En Violeta: plantas/destinos que ya venimos operando, ya sea entregando en sus plantas o bien entregando en el puerto.]]></description>
+    <Style id="icon-1899-0288D1-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-2.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-0288D1-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-2.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-0288D1">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-0288D1-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-0288D1-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-9C27B0-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-3.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-9C27B0-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-3.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-9C27B0">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-9C27B0-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-9C27B0-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="icon-1899-E65100-normal">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-1.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>0</scale>
+      </LabelStyle>
+    </Style>
+    <Style id="icon-1899-E65100-highlight">
+      <IconStyle>
+        <scale>1</scale>
+        <Icon>
+          <href>images/icon-1.png</href>
+        </Icon>
+        <hotSpot x="32" xunits="pixels" y="64" yunits="insetPixels"/>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1</scale>
+      </LabelStyle>
+    </Style>
+    <StyleMap id="icon-1899-E65100">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#icon-1899-E65100-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#icon-1899-E65100-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Folder>
+      <name>POTENCIALES</name>
+      <Placemark>
+        <name>FECCIA Y BATITTONI - BUSTINZA</name>
+        <description><![CDATA[Directo cargill y cofco<br>Linea de credito U$S 150.000<br>Corteva lo habilito como comprador para descarte]]></description>
+        <styleUrl>#icon-1899-E65100</styleUrl>
+        <Point>
+          <coordinates>
+            -61.2907967,-32.7403505,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>MAIOCCO CEREALES SA - PAJONAL</name>
+        <description><![CDATA[Directo Bunge / Cofco<br>Linea de Crédito U$S 300.000 ]]></description>
+        <styleUrl>#icon-1899-E65100</styleUrl>
+        <Point>
+          <coordinates>
+            -60.3110541,-32.4214091,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>OSCAR MORENO CERAL - BAHIA BLANCA</name>
+        <description><![CDATA[400mil tons de espacio, <br>Alquilar una celda o ver alternativas]]></description>
+        <styleUrl>#icon-1899-E65100</styleUrl>
+        <Point>
+          <coordinates>
+            -62.1674369,-38.7463623,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>BIOLATO CEREALES SC - LEONES</name>
+        <description><![CDATA[Trabaja Grassi, FyO y Bunge<br>Linea de credito 80 K USD<br>Comercializa 30K año]]></description>
+        <styleUrl>#icon-1899-E65100</styleUrl>
+        <Point>
+          <coordinates>
+            -62.3088247,-32.6552408,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>Cooperativa Agraria Union y Fuerza de Santa Isabel</name>
+        <description><![CDATA[99% ACA operatoria<br>Linea de credito 300K USD]]></description>
+        <styleUrl>#icon-1899-E65100</styleUrl>
+        <Point>
+          <coordinates>
+            -61.6835386,-33.8678335,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>OPERATIVOS</name>
+      <Placemark>
+        <name>ACOPIOS DEL SUR SA - PTO GRAL SAN MARTIN</name>
+        <description><![CDATA[Descripción: <br>nombre: Acopios del Sur S.A.<br>descripción: ]]></description>
+        <styleUrl>#icon-1899-0288D1</styleUrl>
+        <ExtendedData>
+          <Data name="Descripción">
+            <value/>
+          </Data>
+          <Data name="nombre">
+            <value>Acopios del Sur S.A.</value>
+          </Data>
+          <Data name="descripción">
+            <value/>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -60.7617073,-32.7209416,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>CAMPOAMOR - NECOCHEA</name>
+        <description><![CDATA[Descripción: <br>nombre: CAMPOAMOR<br>descripción: CREDITO otorgado USD 700.000]]></description>
+        <styleUrl>#icon-1899-0288D1</styleUrl>
+        <ExtendedData>
+          <Data name="Descripción">
+            <value/>
+          </Data>
+          <Data name="nombre">
+            <value>CAMPOAMOR</value>
+          </Data>
+          <Data name="descripción">
+            <value>CREDITO otorgado USD 700.000</value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -58.7589551,-38.5269373,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>CAMPOAMOR - BENITO JUAREZ</name>
+        <description><![CDATA[Descripción: <br>nombre: CAMPOAMOR.<br>descripción: Credito Otorgado uSD 700.000]]></description>
+        <styleUrl>#icon-1899-0288D1</styleUrl>
+        <ExtendedData>
+          <Data name="Descripción">
+            <value/>
+          </Data>
+          <Data name="nombre">
+            <value>CAMPOAMOR.</value>
+          </Data>
+          <Data name="descripción">
+            <value>Credito Otorgado uSD 700.000</value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -59.8023586,-37.6856342,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>POTENCIAL CON NEGOCIOS</name>
+      <Placemark>
+        <name>AGRONEXO - TRES PICOS</name>
+        <description><![CDATA[Descripción: <br>nombre: Agronexo<br>descripción: ya operamos <br><br>]]></description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <ExtendedData>
+          <Data name="Descripción">
+            <value/>
+          </Data>
+          <Data name="nombre">
+            <value>Agronexo</value>
+          </Data>
+          <Data name="descripción">
+            <value>ya operamos 
+
+</value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -62.2077688,-38.2854907,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>SEMILLERA CERES - PIGUE</name>
+        <description><![CDATA[Descripción: <br>nombre: Semillera Ceres<br>descripción: Ya venimos operando, entregando en su planta.]]></description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <ExtendedData>
+          <Data name="Descripción">
+            <value/>
+          </Data>
+          <Data name="nombre">
+            <value>Semillera Ceres</value>
+          </Data>
+          <Data name="descripción">
+            <value>Ya venimos operando, entregando en su planta.</value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -62.4223633,-37.6172978,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>ADECO - ESPARTILLAR</name>
+        <description><![CDATA[Descripción: <br>nombre: Adeco <br>descripción: ya venimos operando, descargando en Espartillar]]></description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <ExtendedData>
+          <Data name="Descripción">
+            <value/>
+          </Data>
+          <Data name="nombre">
+            <value>Adeco </value>
+          </Data>
+          <Data name="descripción">
+            <value>ya venimos operando, descargando en Espartillar</value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -62.4752674,-37.3606464,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>BERTOLAMI - CORONEL SUAREZ</name>
+        <description><![CDATA[Descripción: <br>nombre: Bertolami<br>descripción: 100.000 uss<br><br>]]></description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <ExtendedData>
+          <Data name="Descripción">
+            <value/>
+          </Data>
+          <Data name="nombre">
+            <value>Bertolami</value>
+          </Data>
+          <Data name="descripción">
+            <value>100.000 uss
+
+</value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -61.9365327,-37.4579923,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>RURAL CERES - TANDIL</name>
+        <description><![CDATA[Descripción: <br>nombre: Rural Ceres<br>descripción: Linea de Credito ???<br>Ventas sobre su planta de Tandil]]></description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <ExtendedData>
+          <Data name="Descripción">
+            <value/>
+          </Data>
+          <Data name="nombre">
+            <value>Rural Ceres</value>
+          </Data>
+          <Data name="descripción">
+            <value>Linea de Credito ???
+Ventas sobre su planta de Tandil</value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -59.1407469,-37.3049958,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>RURAL CERES - BALCARCE</name>
+        <description><![CDATA[Descripción: <br>nombre: Rural Ceres <br>descripción: Linea de credito<br>Ventas sobre su planta de Balcarce ]]></description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <ExtendedData>
+          <Data name="Descripción">
+            <value/>
+          </Data>
+          <Data name="nombre">
+            <value>Rural Ceres </value>
+          </Data>
+          <Data name="descripción">
+            <value>Linea de credito
+Ventas sobre su planta de Balcarce </value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -58.2604088,-37.8349059,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>AGRONEXO - FRA PAL</name>
+        <description><![CDATA[Descripción: <br>nombre: Agronexo<br>descripción: Venimos operando, con descarga en sus plantas (Frapal, 3 picos, Latigau o bien a puerto con condiciones de ACA]]></description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <ExtendedData>
+          <Data name="Descripción">
+            <value/>
+          </Data>
+          <Data name="nombre">
+            <value>Agronexo</value>
+          </Data>
+          <Data name="descripción">
+            <value>Venimos operando, con descarga en sus plantas (Frapal, 3 picos, Latigau o bien a puerto con condiciones de ACA</value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -61.6059615,-38.3316774,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>PAS - ARROYO SECO</name>
+        <description><![CDATA[Descripción: <br>nombre: PAS (Puerto Arroyo Seco)<br>descripción: Linea Crédito <br>Espacio y Ventas a Puertos ]]></description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <ExtendedData>
+          <Data name="Descripción">
+            <value/>
+          </Data>
+          <Data name="nombre">
+            <value>PAS (Puerto Arroyo Seco)</value>
+          </Data>
+          <Data name="descripción">
+            <value>Linea Crédito 
+Espacio y Ventas a Puertos </value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -60.5148199,-33.1418117,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>PAS - PTO GRAL SAN MARTIN</name>
+        <description><![CDATA[Descripción: <br>nombre: PAS (Puerto Arroyo Seco)<br>descripción: Linea de Credito<br>Ventas Directas y entrega en plantas]]></description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <ExtendedData>
+          <Data name="Descripción">
+            <value/>
+          </Data>
+          <Data name="nombre">
+            <value>PAS (Puerto Arroyo Seco)</value>
+          </Data>
+          <Data name="descripción">
+            <value>Linea de Credito
+Ventas Directas y entrega en plantas</value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -60.7520777,-32.7213403,0
+          </coordinates>
+        </Point>
+      </Placemark>
+      <Placemark>
+        <name>BIO CUATRO - RIO CUARTO</name>
+        <description><![CDATA[Descripción: BIO CUATRO (RIO CUARTO)<br>nombre: Bio Cuatro (Rio Cuarto)<br>descripción: Linea de credito:<br>Venta sobre Rio cuaro a fijar con descuento de flete.<br><br>]]></description>
+        <styleUrl>#icon-1899-9C27B0</styleUrl>
+        <ExtendedData>
+          <Data name="Descripción">
+            <value>BIO CUATRO (RIO CUARTO)</value>
+          </Data>
+          <Data name="nombre">
+            <value>Bio Cuatro (Rio Cuarto)</value>
+          </Data>
+          <Data name="descripción">
+            <value>Linea de credito:
+Venta sobre Rio cuaro a fijar con descuento de flete.
+
+</value>
+          </Data>
+        </ExtendedData>
+        <Point>
+          <coordinates>
+            -64.3452227,-33.1127651,0
+          </coordinates>
+        </Point>
+      </Placemark>
+    </Folder>
+  </Document>
+</kml>

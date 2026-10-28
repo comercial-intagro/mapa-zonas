@@ -16,10 +16,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 #viewtoggle button{padding:5px 13px;border:none;border-radius:18px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(255,255,255,0.9);color:#64748b;box-shadow:0 1px 4px rgba(0,0,0,0.14)}
 #viewtoggle button:hover{background:#fff}
 #viewtoggle button.active{background:#0f766e;color:#fff}
+#plbox{top:90px;right:auto;left:60px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;background:transparent;box-shadow:none}
+#pltog{padding:5px 13px;border:none;border-radius:18px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(255,255,255,0.9);color:#64748b;box-shadow:0 1px 4px rgba(0,0,0,0.14)}
+#pltog.active{background:#334155;color:#fff}
+#plfolders{display:none;position:fixed;bottom:20px;left:12px;z-index:1000;background:rgba(255,255,255,0.96);border-radius:10px;padding:7px 10px;box-shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 14px rgba(0,0,0,0.10);font-size:12px;color:#334155}
+#plfolders:before{content:"Plantas de acopio";display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+#plfolders label{display:flex;align-items:center;gap:6px;margin:2px 0;cursor:pointer;white-space:nowrap}
+#plfolders .dot{width:11px;height:11px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.leaflet-popup-content{font-size:12.5px;line-height:1.4;margin:10px 13px}
+.leaflet-popup-content .pf{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
+.leaflet-popup-content .pn{font-weight:700;color:#0f172a;margin-bottom:4px}
+.leaflet-popup-content .pd{color:#475569}
 #repsel{top:51px;left:235px;display:none;align-items:center;gap:7px;padding:3px 4px 3px 12px;border-radius:18px;box-shadow:0 1px 4px rgba(0,0,0,0.14);font-size:12px;font-weight:600;color:#64748b}
 #repsel select{border:none;background:#f1f5f9;border-radius:14px;padding:4px 8px;font-size:12px;font-weight:600;color:#0f172a;max-width:340px;cursor:pointer;outline:none}
 #info .repname{margin:-2px 0 8px;padding:5px 8px;border-radius:7px;background:#ccfbf1;color:#115e59;font-weight:700;font-size:12px}
-#deppanel{top:90px;left:12px;width:258px;max-height:calc(100vh - 110px);display:none;flex-direction:column;overflow:hidden}
+#deppanel{top:128px;left:12px;width:258px;max-height:calc(100vh - 148px);display:none;flex-direction:column;overflow:hidden}
 #deppanel .dhead{padding:13px 15px 11px;border-bottom:1px solid #eef1f4;position:relative}
 #deppanel .dhead h3{margin:0;font-size:15px;color:#0f172a;letter-spacing:-0.2px;padding-right:20px}
 #deppanel .dhead .sub{font-size:11.5px;color:#64748b;margin-top:2px}
@@ -89,6 +100,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 <div id="viewtoggle" class="panel">
 <button class="active" data-v="VOLUMEN">Volumen</button><button data-v="ETIQUETAS">Etiquetas</button>
 </div>
+<div id="plbox" class="panel"><button id="pltog" title="Plantas de acopio (My Maps)">&#9679; Plantas de acopio</button><div id="plfolders"></div></div>
 <div id="repsel" class="panel"><span>Repre / comercial</span><select id="rep"></select></div>
 <div id="deppanel" class="panel">
 <div class="dhead"><button class="dclose" id="dclose">&times;</button><h3 id="dp-name">—</h3><div class="sub" id="dp-sub"></div><div class="big" id="dp-big"></div></div>
@@ -370,5 +382,38 @@ async function geocodeSin(){
   await sbUpsertGeo(buf);geoDone=true;refresh();
   gt.textContent="Listo";setTimeout(function(){g.style.display="none";},2500);
 }
+// ===== Capa: plantas de acopio (archivo plantas.kml exportado de My Maps) =====
+map.createPane("pl"); map.getPane("pl").style.zIndex=640;
+var PL={loaded:false,layer:L.layerGroup(),groups:{},on:false};
+function kmlText(el,tag){var x=el.getElementsByTagName(tag)[0];return x?x.textContent:"";}
+function safeDesc(t){t=String(t||"").replace(/<br\s*\/?>/gi,"\n");var d=document.createElement("div");d.innerHTML=t;t=d.textContent;
+  return esc(t.replace(/\u00a0/g," ").trim()).replace(/\n+/g,"<br>");}
+async function loadPlantas(){
+  var r=await fetch("plantas.kml",{cache:"no-store"});if(!r.ok)throw new Error("plantas.kml: "+r.status);
+  var x=new DOMParser().parseFromString(await r.text(),"text/xml");
+  var box=document.getElementById("plfolders"),html="";
+  Array.prototype.forEach.call(x.getElementsByTagName("Folder"),function(f,fi){
+    var fname=kmlText(f,"name")||("Capa "+(fi+1)),g=L.layerGroup(),col="#334155",n=0;
+    Array.prototype.forEach.call(f.getElementsByTagName("Placemark"),function(p){
+      var c=kmlText(p,"coordinates").trim().split(",");if(c.length<2)return;
+      var lng=parseFloat(c[0]),lat=parseFloat(c[1]);if(isNaN(lat))return;
+      var m=(kmlText(p,"styleUrl").match(/([0-9A-Fa-f]{6})(?:-normal|-highlight)?$/));if(m)col="#"+m[1];
+      var desc="";Array.prototype.forEach.call(p.getElementsByTagName("Data"),function(d){if(d.getAttribute("name")==="descripción")desc=kmlText(d,"value");});
+      if(!desc)desc=kmlText(p,"description");
+      var mk=L.circleMarker([lat,lng],{pane:"pl",radius:7,color:"#fff",weight:2,fillColor:col,fillOpacity:1});
+      mk.bindTooltip(esc(kmlText(p,"name")),{className:"mini",direction:"top",offset:[0,-6]});
+      mk.bindPopup("<div class='pf' style='color:"+col+"'>"+esc(fname)+"</div><div class='pn'>"+esc(kmlText(p,"name"))+"</div><div class='pd'>"+(safeDesc(desc)||"<i>Sin descripción</i>")+"</div>");
+      g.addLayer(mk);n++;});
+    PL.groups[fi]=g;g.addTo(PL.layer);
+    html+="<label><input type='checkbox' data-f='"+fi+"' checked><span class='dot' style='background:"+col+"'></span>"+esc(fname)+" ("+n+")</label>";});
+  box.innerHTML=html;PL.loaded=true;
+}
+document.getElementById("pltog").addEventListener("click",async function(){
+  var b=this,box=document.getElementById("plfolders");
+  if(!PL.loaded){try{b.textContent="Cargando…";await loadPlantas();}catch(e){b.innerHTML="&#9679; Plantas de acopio";status("No se pudo cargar la capa de plantas.<br><small>"+esc(e.message)+"</small>",true);setTimeout(function(){status(null);},4000);return;}}
+  PL.on=!PL.on;b.innerHTML="&#9679; Plantas de acopio";b.classList.toggle("active",PL.on);
+  if(PL.on){PL.layer.addTo(map);box.style.display="block";}else{map.removeLayer(PL.layer);box.style.display="none";}});
+document.getElementById("plfolders").addEventListener("change",function(e){var g=PL.groups[e.target.getAttribute("data-f")];if(!g)return;
+  if(e.target.checked)g.addTo(PL.layer);else PL.layer.removeLayer(g);});
 load();
 </script></body></html>
